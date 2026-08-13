@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 def convert(args):
     i, p, output_dir = args
-    out_path = output_dir / f"fineweb_edu_10B_{i:05d}.arrayrecord"
+    out_path = output_dir / f"fineweb_edu_100B_{i:05d}.arrayrecord"
     if out_path.exists():
         return
     texts = pq.read_table(p, columns=["text"])["text"].to_pylist()
@@ -21,8 +21,8 @@ def convert(args):
 
 def main():
     data_dir = Path(os.environ["DATA_DIR"])
-    parquet_dir = data_dir / "fineweb_edu_10B_parquet" / "sample" / "10BT"
-    output_dir = data_dir / "fineweb_edu_10B_arrayrecord"
+    parquet_dir = data_dir / "fineweb_edu_100B_parquet" / "sample" / "100BT"
+    output_dir = data_dir / "fineweb_edu_100B_arrayrecord"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     parquet_files = sorted(parquet_dir.glob("*.parquet"))

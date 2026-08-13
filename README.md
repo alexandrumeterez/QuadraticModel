@@ -16,7 +16,8 @@ pip install -r requirements.txt
 
 ## Data and pretraining
 
-`DATA_DIR` is the root containing `fineweb_edu_10B_arrayrecord/`.
+`DATA_DIR` is the root containing `fineweb_edu_100B_arrayrecord/`. A checkpoint
+config can instead provide an explicit `dataset.arrayrecord_dir` path.
 
 ```bash
 export DATA_DIR=/path/to/data

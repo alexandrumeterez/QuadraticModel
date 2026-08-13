@@ -14,6 +14,7 @@ from tokenizers import Tokenizer, decoders, models, pre_tokenizers, trainers
 class FineWeb:
     seq_len: int
     vocab_size: int
+    arrayrecord_dir: str | None = None
 
     @cached_property
     def tokenizer(self):
@@ -67,11 +68,17 @@ class FineWeb:
 
     @cached_property
     def shards(self) -> list[Path]:
-        data_dir = Path(os.environ["DATA_DIR"]) / "fineweb_edu_10B_arrayrecord"
+        data_dir = (
+            Path(self.arrayrecord_dir)
+            if self.arrayrecord_dir is not None
+            else Path(os.environ["DATA_DIR"]) / "fineweb_edu_100B_arrayrecord"
+        )
         shards = sorted(data_dir.glob("*.arrayrecord"))
-        if not shards:
-            raise ValueError(f"No .arrayrecord shards found under {data_dir}")
-        assert len(shards) == 14, f"Expected 14 shards, found {len(shards)}"
+        if len(shards) < 2:
+            raise ValueError(
+                f"Expected at least two .arrayrecord shards under {data_dir}, "
+                f"found {len(shards)}"
+            )
         return shards
 
     def build(

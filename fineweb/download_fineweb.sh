@@ -6,10 +6,10 @@ mkdir -p "$DATA_DIR"
 HF_HOME="$(mktemp -d "$DATA_DIR/.hf_home.XXXXXX")"
 export HF_HOME
 trap 'rm -rf "$HF_HOME"' EXIT
-mkdir -p "$HF_HOME" "$DATA_DIR/fineweb_edu_10B_parquet"
+mkdir -p "$HF_HOME" "$DATA_DIR/fineweb_edu_100B_parquet"
 
 uvx hf download \
   HuggingFaceFW/fineweb-edu \
   --repo-type dataset \
-  --local-dir "$DATA_DIR/fineweb_edu_10B_parquet" \
-  --include "sample/10BT/*.parquet"
+  --local-dir "$DATA_DIR/fineweb_edu_100B_parquet" \
+  --include "sample/100BT/*.parquet"
