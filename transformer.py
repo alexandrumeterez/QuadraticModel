@@ -10,6 +10,7 @@ from jax import numpy as jnp
 from jax import random as jr
 from jaxtyping import Array, PRNGKeyArray
 
+from harvest import sow
 from ops import apply_rope, get_embedding, rmsnorm, sdpa
 from util import RNG, DType, saved_property
 
@@ -101,28 +102,39 @@ class Transformer:
         norm = partial(rmsnorm, eps=self.norm_eps, dtype=self.norm_dtype)
         attn_impl = "cudnn" if self.flash_attention else "xla"
 
+        keystr = lambda k: jax.tree_util.keystr(k, simple=True, separator=".")
+        p = jax.tree.map_with_path(lambda k, v: sow(v, keystr(k)), p)
+
         def mlp(h: Array, p: dict[str, Array]) -> Array:
             h = jnp.einsum("...D,DM->...M", h, p["up"])
+            h = sow(h, "mlp_preact")
             h = jax.nn.gelu(h)
-            return jnp.einsum("...M,MD->...D", h, p["head"])
+            h = jnp.einsum("...M,MD->...D", h, p["head"])
+            return sow(h, "mlp_out")
 
         def attn(h: Array, p: dict[str, Array]) -> Array:
             q, k, v = (jnp.einsum("...D,DHK->...HK", h, p[s]) for s in "qkv")
+            q, k, v = sow(q, "q"), sow(k, "k"), sow(v, "v")
             q, k = rope(norm(q)), rope(norm(k))
             a = sdpa(q, k, v, is_causal=True, implementation=attn_impl)
-            return jnp.einsum("...HK,HKD->...D", a, p["head"])
+            a = sow(a, "sdpa_out")
+            out = jnp.einsum("...HK,HKD->...D", a, p["head"])
+            return sow(out, "attn_out")
 
         def block(h: Array, p: dict):
             h += attn(norm(h), p["attn"]) / self.L
             h += mlp(norm(h), p["mlp"]) / self.L
+            h = sow(h, "residual")
             return h, None
 
         if self.grad_checkpoint:
             block = jax.checkpoint(block)
 
-        h = get_embedding(p["embd"], x)
+        h = sow(get_embedding(p["embd"], x), "embd")
         h = lax.scan(block, h, p["blocks"], unroll=self.scan_unroll)[0]
-        return jnp.einsum("...TD,DV->...TV", norm(h), p["head"])
+        head_in = sow(norm(h), "head_in", tag="shgd")
+        out = jnp.einsum("...TD,DV->...TV", head_in, p["head"])
+        return sow(out, "logits")
 
     @saved_property
     def n_params(self) -> int:
