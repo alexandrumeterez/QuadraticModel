@@ -45,6 +45,17 @@ Keep the `ds/process_*-of-*.json` item in each selected checkpoint. It stores
 the Grain iterator position needed to reconstruct the exact post-checkpoint
 training stream.
 
+## Linearization experiments
+
+The continued-training workflow is in `analysis/linearization_full/`. It loads
+a pretraining checkpoint and supports the original nonlinear model (`none`),
+linearized logits with cross-entropy (`prox`), and the quadratic loss (`quad`).
+It logs both the full nonlinear-model loss and the transformed training loss.
+
+Run one configuration directly with `run.py`, or use `sweep.sh` and
+`sweep_eos.sh` for the Slurm sweeps. The EOS workflow consumes the post-
+checkpoint sample splits produced by the preprocessing step above.
+
 ## Figures
 
 The figures require only Matplotlib, NumPy, and Pandas:
